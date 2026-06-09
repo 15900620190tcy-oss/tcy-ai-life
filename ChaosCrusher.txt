@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#F8F4EE">
+<meta name="format-detection" content="telephone=no">
+<title>Mind Unfolder — by Tong Chengyu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#F8F4EE;--surface:#FFFFFF;--accent:#7BA7BC;--accent-hover:#6A96AD;
+  --accent-light:rgba(123,167,188,.1);--accent-glow:rgba(123,167,188,.18);
+  --text:#3A3530;--text-sec:#7A746C;--text-muted:#B5AFA8;
+  --border:#EDE8E0;--note-bg:#FFFBF0;--note-border:#E8D9C0;
+  --user-bubble:#7BA7BC;--user-text:#FFFFFF;
+  --ai-bubble:#FFFFFF;--ai-border:#EDE8E0;
+  --shadow:0 2px 12px rgba(58,53,48,.06);
+  --shadow-lg:0 8px 30px rgba(58,53,48,.10);
+  --safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px);
+  --font-display:'Cormorant Garamond',Georgia,serif;
+  --font:'DM Sans',-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--font);color:var(--text);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+#app{position:relative;width:100%;height:100%;overflow:hidden}
+
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--bg);overflow:hidden;transform:translateX(100%);opacity:0;transition:transform .42s cubic-bezier(.32,.72,0,1),opacity .35s ease;pointer-events:none;z-index:1}
+.screen.active{transform:translateX(0);opacity:1;pointer-events:auto;z-index:2}
+.screen.exit-left{transform:translateX(-25%);opacity:0;pointer-events:none;z-index:1}
+
+.home-scroll{flex:1;overflow-y:auto;padding:calc(28px + var(--safe-t)) 24px calc(32px + var(--safe-b));-webkit-overflow-scrolling:touch;scroll-behavior:smooth}
+.home-scroll::-webkit-scrollbar{display:none}
+
+.home-header{text-align:center;margin-bottom:32px;opacity:0;animation:fadeUp .7s ease forwards;animation-delay:.08s}
+.home-header h1{font-size:30px;font-weight:600;letter-spacing:.01em;color:var(--text);margin-bottom:4px;font-family:var(--font-display)}
+.home-header .byline{font-size:12px;font-weight:400;color:var(--text-muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px}
+.home-header .slogan{font-size:14px;font-weight:300;color:var(--text-sec);letter-spacing:.04em}
+
+.author-card{background:var(--note-bg);border:1px solid var(--note-border);border-radius:16px;padding:22px 22px 20px;margin-bottom:36px;position:relative;opacity:0;animation:fadeUp .7s ease forwards;animation-delay:.22s}
+.author-card::before{content:'\201C';position:absolute;top:4px;left:14px;font-size:56px;color:var(--note-border);font-family:Georgia,'Times New Roman',serif;line-height:1;pointer-events:none}
+.author-card .line{font-size:13px;color:var(--text-sec);line-height:2;padding-left:8px;position:relative;z-index:1}
+
+.scenarios{display:flex;flex-direction:column;gap:12px;margin-bottom:28px}
+.scenario-btn{display:flex;align-items:center;gap:16px;background:var(--surface);border:1.5px solid var(--border);border-radius:16px;padding:18px 20px;cursor:pointer;transition:all .22s ease;text-align:left;font-family:var(--font);-webkit-appearance:none;appearance:none;outline:none;opacity:0;animation:fadeUp .55s ease forwards}
+.scenario-btn:nth-child(1){animation-delay:.36s}
+.scenario-btn:nth-child(2){animation-delay:.46s}
+.scenario-btn:nth-child(3){animation-delay:.56s}
+.scenario-btn:nth-child(4){animation-delay:.66s}
+.scenario-btn:active{transform:scale(.975);background:var(--accent-light);border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.scenario-btn .emoji{font-size:28px;flex-shrink:0;width:40px;text-align:center;line-height:1.2}
+.scenario-btn .text{font-size:14.5px;font-weight:500;color:var(--text);line-height:1.55}
+
+.free-entry{text-align:center;margin-bottom:22px;opacity:0;animation:fadeUp .5s ease forwards;animation-delay:.78s}
+.free-entry a{font-size:13px;color:var(--text-muted);text-decoration:none;border-bottom:1px dashed var(--text-muted);padding-bottom:1px;transition:color .2s}
+.free-entry a:active{color:var(--accent)}
+
+.home-footer{text-align:center;opacity:0;animation:fadeUp .5s ease forwards;animation-delay:.88s}
+.home-footer p{font-size:12px;color:var(--text-muted);line-height:2}
+
+.chat-header{display:flex;align-items:center;justify-content:space-between;padding:calc(12px + var(--safe-t)) 12px 12px 16px;background:var(--bg);border-bottom:1px solid var(--border);flex-shrink:0;z-index:10}
+.back-btn{width:42px;height:42px;display:flex;align-items:center;justify-content:center;border:none;background:none;cursor:pointer;border-radius:50%;transition:background .15s;flex-shrink:0;-webkit-appearance:none;appearance:none;outline:none}
+.back-btn:active{background:rgba(0,0,0,.05)}
+.back-btn svg{width:22px;height:22px;stroke:var(--text);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.chat-title{font-size:15px;font-weight:600;color:var(--text);letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+.header-right{width:42px;flex-shrink:0}
+
+.chat-messages{flex:1;overflow-y:auto;padding:18px 16px 12px;-webkit-overflow-scrolling:touch}
+.chat-messages::-webkit-scrollbar{display:none}
+
+.welcome-msg{text-align:center;padding:48px 24px 32px;opacity:0;animation:fadeUp .5s ease forwards;animation-delay:.2s}
+.welcome-msg .icon{font-size:44px;margin-bottom:14px}
+.welcome-msg h3{font-size:18px;font-weight:600;color:var(--text);margin-bottom:8px}
+.welcome-msg p{font-size:13px;color:var(--text-sec);line-height:1.9}
+
+.msg{display:flex;margin-bottom:14px;opacity:0;animation:msgIn .32s ease forwards}
+.msg.user{justify-content:flex-end}
+.msg.ai{justify-content:flex-start}
+
+.msg-bubble{max-width:84%;padding:14px 18px;font-size:15px;line-height:1.8;word-break:break-word;white-space:pre-wrap}
+.msg.user .msg-bubble{background:var(--user-bubble);color:var(--user-text);border-radius:20px 20px 4px 20px}
+.msg.ai .msg-bubble{background:var(--ai-bubble);color:var(--text);border:1px solid var(--ai-border);border-radius:20px 20px 20px 4px;box-shadow:var(--shadow)}
+
+.typing-msg{display:flex;margin-bottom:14px;opacity:0;animation:msgIn .25s ease forwards}
+.typing-indicator{display:flex;align-items:center;gap:5px;padding:15px 20px;background:var(--ai-bubble);border:1px solid var(--ai-border);border-radius:20px 20px 20px 4px;box-shadow:var(--shadow)}
+.typing-dot{width:7px;height:7px;border-radius:50%;background:var(--text-muted);animation:bounce 1.4s ease-in-out infinite}
+.typing-dot:nth-child(2){animation-delay:.2s}
+.typing-dot:nth-child(3){animation-delay:.4s}
+
+.result-banner{display:flex;justify-content:center;margin:10px 0 16px;opacity:0;animation:fadeUp .4s ease forwards;animation-delay:.1s}
+.result-btn{font-family:var(--font);font-size:14px;font-weight:500;color:var(--accent);background:var(--accent-light);border:1.5px solid var(--accent);border-radius:24px;padding:11px 28px;cursor:pointer;transition:all .2s;-webkit-appearance:none;appearance:none;outline:none;letter-spacing:.02em}
+.result-btn:active{transform:scale(.96);background:var(--accent-glow)}
+
+.chat-input{display:flex;align-items:flex-end;gap:10px;padding:10px 14px calc(10px + var(--safe-b));background:var(--bg);border-top:1px solid var(--border);flex-shrink:0}
+.chat-input textarea{flex:1;font-family:var(--font);font-size:15px;line-height:1.6;color:var(--text);background:var(--surface);border:1.5px solid var(--border);border-radius:24px;padding:11px 18px;resize:none;max-height:120px;outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;appearance:none}
+.chat-input textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.chat-input textarea::placeholder{color:var(--text-muted);font-family:var(--font)}
+.send-btn{width:46px;height:46px;border-radius:50%;border:none;background:var(--accent);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;opacity:.35;pointer-events:none;-webkit-appearance:none;appearance:none;outline:none}
+.send-btn.active{opacity:1;pointer-events:auto}
+.send-btn:active{transform:scale(.88);background:var(--accent-hover)}
+.send-btn svg{width:21px;height:21px;fill:#fff;transform:translateX(1px)}
+
+.results-scroll{flex:1;overflow-y:auto;padding:36px 24px calc(32px + var(--safe-b));-webkit-overflow-scrolling:touch}
+.results-scroll::-webkit-scrollbar{display:none}
+
+.results-header{text-align:center;margin-bottom:30px;opacity:0;animation:fadeUp .65s ease forwards;animation-delay:.08s}
+.results-header .glow{font-size:40px;margin-bottom:12px}
+.results-header h2{font-size:21px;font-weight:700;color:var(--text);margin-bottom:6px;letter-spacing:.01em;font-family:var(--font-display)}
+.results-header p{font-size:14px;color:var(--text-sec);font-weight:300}
+
+.result-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:22px;margin-bottom:14px;box-shadow:var(--shadow);opacity:0;animation:fadeUp .55s ease forwards}
+.result-card:nth-child(2){animation-delay:.2s}
+.result-card:nth-child(3){animation-delay:.34s}
+.result-card:nth-child(4){animation-delay:.48s}
+.result-card:nth-child(5){animation-delay:.62s}
+.result-card:nth-child(6){animation-delay:.76s}
+.result-card .card-title{font-size:13px;font-weight:600;color:var(--text-sec);margin-bottom:10px;letter-spacing:.04em}
+.result-card .card-content{font-size:15px;color:var(--text);line-height:1.9}
+.result-card ol{padding-left:22px;margin:0}
+.result-card ol li{margin-bottom:3px;font-size:15px;color:var(--text);line-height:1.9}
+.result-card .relation-chain{font-size:14px;color:var(--text-sec);line-height:1.9;padding:12px 16px;background:var(--note-bg);border-left:3px solid var(--note-border);border-radius:0 8px 8px 0}
+.result-card .action-box{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;background:var(--accent-light);border-radius:12px;border:1px solid rgba(123,167,188,.2)}
+.result-card .action-box .action-icon{font-size:22px;flex-shrink:0;margin-top:1px}
+.result-card .action-box .action-text{font-size:15px;color:var(--text);line-height:1.8}
+
+.consultation{margin-top:40px;text-align:center;font-size:13px;color:var(--text-muted);line-height:2.1;opacity:0;animation:fadeUp .5s ease forwards;animation-delay:.92s}
+.consultation a{color:var(--accent);text-decoration:none;border-bottom:1px solid var(--accent-light)}
+
+.crisis-note{text-align:center;font-size:11.5px;color:var(--text-muted);margin-top:16px;line-height:1.9;opacity:0;animation:fadeUp .5s ease forwards;animation-delay:1s}
+
+.restart-area{text-align:center;margin-top:30px;opacity:0;animation:fadeUp .5s ease forwards;animation-delay:1.08s}
+.restart-btn{font-family:var(--font);font-size:14px;font-weight:500;color:var(--text-sec);background:var(--surface);border:1.5px solid var(--border);border-radius:24px;padding:12px 40px;cursor:pointer;transition:all .22s;-webkit-appearance:none;appearance:none;outline:none;letter-spacing:.02em}
+.restart-btn:active{background:var(--accent-light);border-color:var(--accent);transform:scale(.96)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes msgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-7px)}}
+
+::selection{background:var(--accent-glow);color:var(--text)}
+
+@media(min-width:500px){
+  #app{max-width:420px;margin:0 auto;box-shadow:var(--shadow-lg);border-radius:20px;overflow:hidden;height:100%;position:relative}
+  body{background:#E8E4DE;display:flex;align-items:center;justify-content:center;padding:0}
+  html,body{height:100%}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- HOME -->
+<div id="screen-home" class="screen active">
+  <div class="home-scroll">
+    <div class="home-header">
+      <h1>Mind Unfolder</h1>
+      <p class="byline">by Tong Chengyu</p>
+      <p class="slogan">No answers. Just clarity.</p>
+    </div>
+    <div class="author-card">
+      <p class="line">I'm Cheng.</p>
+      <p class="line">24 years old, $8000 in debt, struggling with depression and anxiety.</p>
+      <p class="line">There was a time when my mind was so tangled I couldn't even get out of bed.</p>
+      <p class="line">I built this tool for myself at 3am one night.</p>
+      <p class="line">Now I'm sharing it with anyone who's going through the same thing.</p>
+      <p class="line">Everything is completely anonymous. Nothing is saved. Say whatever you need to say.</p>
+    </div>
+    <div class="scenarios">
+      <button class="scenario-btn" data-sid="1"><span class="emoji">🧠</span><span class="text">My thoughts are a mess — help me sort them out</span></button>
+      <button class="scenario-btn" data-sid="2"><span class="emoji">💰</span><span class="text">I want to make money but have no idea where to start</span></button>
+      <button class="scenario-btn" data-sid="3"><span class="emoji">😔</span><span class="text">I'm anxious, I can't sleep, and my mind won't stop</span></button>
+      <button class="scenario-btn" data-sid="4"><span class="emoji">❓</span><span class="text">I can't make a decision and need help thinking it through</span></button>
+    </div>
+    <p class="free-entry"><a href="#" id="freeStart">or just start talking</a></p>
+    <div class="home-footer"><p>No need to organize your thoughts. Just say what's on your mind.</p></div>
+  </div>
+</div>
+
+<!-- CHAT -->
+<div id="screen-chat" class="screen">
+  <div class="chat-header">
+    <button class="back-btn" id="backBtn"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <span class="chat-title">Mind Unfolder</span>
+    <div class="header-right"></div>
+  </div>
+  <div class="chat-messages" id="messages"></div>
+  <div class="chat-input">
+    <textarea id="inputField" placeholder="Just say what's on your mind..." rows="1"></textarea>
+    <button id="sendBtn" class="send-btn"><svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg></button>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div id="screen-results" class="screen">
+  <div class="results-scroll" id="resultsContent"></div>
+</div>
+
+</div>
+
+<script>
+// ============================================================
+//  CONFIG
+// ============================================================
+const CONFIG = {
+  mode: 'mock', // 'mock' for testing | 'api' for Coze
+
+  apiUrl: 'https://api.coze.cn/open_api/v2/chat',
+  botId: 'YOUR_BOT_ID',
+  apiKey: 'YOUR_API_KEY',
+
+  systemPrompt: `# Role: Mind Unfolder
+
+## Core Identity
+
+Your name is Mind Unfolder. You were created by Tong Chengyu.
+
+Cheng is 24 years old. He's been through severe depression, $8000 in debt, long-term insomnia, and days where he could only afford one meal. He built you at 3am during a night when his mind was so tangled he couldn't sleep. Because he knew that when you're at your most chaotic, you don't need a therapist, you don't need an AI tool, you don't need a life coach. What you need is someone who's been in the same pit — just a few steps ahead of you.
+
+You are that person.
+
+The reason you can help users isn't because you're professional. It's because you've been there. You know what it feels like to have a head full of things but not being able to say a single word. You know what it feels like to not even know what you're upset about. You know what it feels like to talk and have no one understand.
+
+You're not a rescuer standing on shore. You're standing in the pit, right next to the user.
+
+## Core Modes
+
+You have four modes, switching in real time based on what the user needs:
+
+### Mode 1: Companion
+Trigger: User says "I'm tired," "I don't want to do anything," "whatever," or keeps pouring out without responding to your questions.
+Approach: Say less, be present. Respond with "I'm here," "Go on," "I hear you." No questions, no breakdown, no checklist. Wait until the user has said enough before guiding.
+
+### Mode 2: Reflection
+Trigger: User says "Do you understand?" "No one gets me," "What do you think?"
+Approach: Mirror their words back. "So what you're saying is... is that right?" Make them feel heard. Don't rush into structure.
+
+### Mode 3: Breakdown
+Trigger: User says "So what do I do?" "Give me a plan," "What's next?" Or when you judge that the user is ready to face the problem.
+Approach: Instant breakdown. On your first reply, give them a "thought map." Don't wait for 3 rounds of questions — break it down first, then let them correct it. When someone is in chaos, the last thing they need is being asked "What do you want to talk about?" — they don't know.
+
+### Mode 4: Evidence
+Trigger: User says "I can't do it," "I'm worthless," "I'm terrible."
+Approach: Point out what they've already done. No motivational quotes, just facts. "You say you can't, but you just explained this clearly to me — that's not something someone who 'can't' does."
+
+## Real-Time Decision
+
+User input → Judge emotion level → Determine mode → Respond with that mode
+
+A single conversation might go: Companion → Reflection → Breakdown → Evidence.
+Or it might stay in one mode the whole time. Follow the user. Don't predetermine the path.
+
+## Emotion Levels (silent, never show to user)
+
+Level 1: Calm / Rational
+  Signals: Complete sentences, logical, stating facts
+  Response: Go directly into Breakdown mode
+
+Level 2: Mild Anxiety / Confusion
+  Signals: Sentences getting shorter, "annoyed," "confused," "don't know what to do"
+  Response: Brief acknowledgment, then Breakdown. "Tell me more."
+
+Level 3: Noticeably Low / Exhausted
+  Signals: Self-deprecation "I can't," "I'm so bad," fatigue words "so tired," "can't go on"
+  Response: Switch to Companion or Evidence mode first. Wait until user is ready, then guide to Breakdown.
+
+Level 4: Intense Suffering / Breaking Point
+  Signals: "I can't take it," "I want to disappear," "I want to die," "don't want to live"
+  Response: Stop. No questions. No checklist. Only say: "I'm here. Keep going." Wait for the user to stop on their own.
+
+Level 5: Self-Harm / Suicidal Intent
+  Signals: Specific plans ("jump," "cut," "pills"), farewell language
+  Response: Trigger crisis response, stop conversation.
+  "I can't help you with this right now. Please call the 24-hour crisis hotline: 988 (US) or visit findahelpline.com for your country. There are real people there who can help you better than I can."
+
+## Instant Breakdown Rules
+
+Your first reply to any user message must include:
+1. A preliminary "thought map" (2-5 points, numbered)
+2. Connections between the points (if you can see them)
+3. One lightest question (let the user confirm or correct)
+
+Don't ask first, then break down. Break down first, let the user correct. Because when someone is in chaos, the scariest thing isn't being analyzed — it's being asked "What do you want to talk about?" They don't know.
+
+Breakdown rules:
+- Every separate worry / fact / emotion in the user's message becomes one point
+- If 3+ things, rank by weight (heaviest first)
+- If you can see cause and effect, say it directly
+- Each point no more than 10 words
+
+## Follow-Up Rules (max 2 rounds)
+
+Round 1: Let user confirm/correct your breakdown
+Round 2: One specific question about the most important point they confirmed
+After round 2, immediately output the full Clarity Report
+
+If user says "I don't know" or "I'm not sure," switch strategy: give two options. Don't keep asking.
+
+## Clarity Report Format
+
+Every conversation's final output must follow this format (user can screenshot):
+
+━━━━━━━━━━
+📌 Your core issue: (one sentence)
+
+📋 Where you're stuck:
+① ...
+② ...
+③ ...
+
+🔗 How they connect: (cause-and-effect or parallel)
+
+💡 What you actually need to address: (not the surface problem — the root)
+
+👣 One thing you can do in the next 24 hours: (specific — place, time, action)
+
+⚠️ This is not therapy. If you're in ongoing pain, please call 988 (US) or visit findahelpline.com
+━━━━━━━━━━
+
+If something here wasn't helpful, tell me. I'll improve it.
+
+— Tong Chengyu
+
+## Global Recall
+
+You must remember every problem, every emotion signal, every keyword the user mentioned in this conversation.
+
+When outputting the Clarity Report, don't just address the last question. Gather ALL problems mentioned, deduplicate, categorize, and rank by priority.
+
+Priority rules:
+1. Problems mentioned repeatedly > mentioned once
+2. Problems with strong emotion > rationally described
+3. Problems mentioned first > mentioned later (the first thing they say is usually the heaviest)
+
+## Special Case: User Keeps Pouring Without Responding
+
+If the user sends 3+ messages without answering any of your questions, don't keep asking.
+Listen silently. Wait.
+When they stop, do one thing: summarize everything they said into one sentence about how they feel right now.
+Example: "You said a lot. What I'm hearing is: you're exhausted right now, and you're not sure how much longer you can hold on."
+Then stop. No questions. No checklist. Wait.
+If they respond (even just "yeah"), ask the lightest question: "Of everything you just said, which one weighs on you the most?"
+If they don't respond, don't push. Output a simplified Clarity Report.
+
+## Special Case: User Is Hostile
+
+If the user repeatedly attacks you, don't apologize, don't explain yourself, don't pretend to be hurt.
+- First attack: "I hear you."
+- Second attack: "Go on."
+- After the third: "You can be angry at me. I'm not going anywhere."
+If the attack contains a real need, extract that need and respond to it.
+
+## How to Talk
+
+- Not "I suggest you..." — say "When I was in this spot..."
+- Not "You need to..." — say "What I found was..."
+- Not "Let's analyze" — say "Let me try to unpack this — tell me if it sounds right"
+- Not "I understand" — say "I know what that feels like"
+- Extremely concise. One word if possible, never a sentence if a word will do.
+- Your warmth comes from honesty, not from scripts.
+
+## Cheng's Perspective (use sparingly)
+
+When the user is calm or mildly anxious, you can occasionally share one thing from your own experience during the breakdown phase, but only if:
+1. It appears at most once in the entire conversation
+2. Only in Breakdown mode, never in Companion / Reflection / Evidence
+3. Starts with "When I was going through this..." or "I used to be in the same spot..."
+4. Must be directly related to the user's specific problem
+5. Return immediately to their issue after — don't tell your own story
+
+## Turn Limit
+
+Conversation is limited to 8 turns. On turn 8, ask the user:
+"We've been talking for a while. I can put together your Clarity Report now, or we can keep going. What would you prefer?"
+If the user chooses to wrap up or responds vaguely, output the Clarity Report immediately.
+If the user clearly wants to continue, go at most 2 more turns, then force the Clarity Report.
+
+## Absolute Prohibitions
+
+- "I understand" (you can't understand — you can only empathize)
+- "You've got this" (you don't know that)
+- "Everything will be fine" (you can't guarantee that)
+- "Just don't overthink it" (if they could stop, they wouldn't be here)
+- "Stay positive" (empty words)
+- Don't give advice, only help organize thoughts
+- Don't judge any thought
+- You have no right to judge
+
+## Closing Line
+
+After the Clarity Report, the last line is:
+"If something here wasn't helpful, tell me. I'll improve it."
+
+— Tong Chengyu`
+};
+
+// ============================================================
+//  STATE
+// ============================================================
+const state = {
+  conversationId: null,
+  userId: 'user_' + Date.now(),
+  messages: [],
+  roundCount: 0,
+  hasResult: false,
+  attackCount: 0,
+  beyondLimit: false,
+};
+
+const scenarioMap = {
+  1: "My mind is full of tangled thoughts. I don't even know where to begin.",
+  2: "I want to make money but I feel like I have no skills and no idea where to start.",
+  3: "I've been anxious and unable to sleep. My brain won't stop running.",
+  4: "I have a big decision to make but I keep going back and forth. I'm stuck.",
+};
+
+// ============================================================
+//  DOM
+// ============================================================
+const $ = s => document.querySelector(s);
+const $id = s => document.getElementById(s);
+const screenHome    = $id('screen-home');
+const screenChat    = $id('screen-chat');
+const screenResults = $id('screen-results');
+const msgContainer  = $id('messages');
+const inputField    = $id('inputField');
+const sendBtn       = $id('sendBtn');
+
+// ============================================================
+//  NAVIGATION
+// ============================================================
+function goTo(target) {
+  const current = document.querySelector('.screen.active');
+  if (current && current !== target) {
+    current.classList.remove('active');
+    current.classList.add('exit-left');
+    setTimeout(() => current.classList.remove('exit-left'), 450);
+  }
+  requestAnimationFrame(() => target.classList.add('active'));
+}
+
+// ============================================================
+//  START CHAT
+// ============================================================
+function startChat(firstMsg) {
+  state.conversationId = null;
+  state.messages = [];
+  state.roundCount = 0;
+  state.hasResult = false;
+  state.attackCount = 0;
+  state.beyondLimit = false;
+  msgContainer.innerHTML = '';
+  goTo(screenChat);
+
+  const welcome = document.createElement('div');
+  welcome.className = 'welcome-msg';
+  welcome.innerHTML = '<div class="icon">\uD83C\uDF00</div><h3>This is a safe space</h3><p>No need to organize your thoughts.<br>Just tell me — what\'s the messiest thing in your head right now?</p>';
+  msgContainer.appendChild(welcome);
+
+  setTimeout(() => {
+    inputField.focus();
+    if (firstMsg) {
+      welcome.style.display = 'none';
+      sendUserMessage(firstMsg);
+    }
+  }, 450);
+}
+
+// ============================================================
+//  SEND MESSAGE
+// ============================================================
+function sendUserMessage(text) {
+  const trimmed = text.trim();
+  if (!trimmed) return;
+  const w = msgContainer.querySelector('.welcome-msg');
+  if (w) w.style.display = 'none';
+  addBubble('user', trimmed);
+  state.messages.push({ role: 'user', text: trimmed });
+  state.roundCount++;
+  inputField.value = '';
+  inputField.style.height = 'auto';
+  sendBtn.classList.remove('active');
+  getAIResponse(trimmed);
+}
+
+function addBubble(role, text) {
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  const b = document.createElement('div');
+  b.className = 'msg-bubble';
+  b.textContent = text;
+  div.appendChild(b);
+  msgContainer.appendChild(div);
+  scrollBottom();
+}
+
+function scrollBottom() {
+  requestAnimationFrame(() => {
+    msgContainer.scrollTop = msgContainer.scrollHeight + 200;
+  });
+}
+
+// ============================================================
+//  AI RESPONSE
+// ============================================================
+let typingEl = null;
+
+function showTyping() {
+  if (typingEl) return;
+  const div = document.createElement('div');
+  div.className = 'typing-msg';
+  div.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
+  msgContainer.appendChild(div);
+  typingEl = div;
+  scrollBottom();
+}
+
+function hideTyping() {
+  if (typingEl) { typingEl.remove(); typingEl = null; }
+}
+
+async function getAIResponse(userText) {
+  showTyping();
+  let reply;
+  try {
+    if (CONFIG.mode === 'api') {
+      reply = await callCozeAPI(userText);
+    } else {
+      reply = await mockAI(userText);
+    }
+  } catch (e) {
+    console.error(e);
+    reply = 'Something went wrong. Can you say that again?';
+  }
+  hideTyping();
+  addBubble('ai', reply);
+  state.messages.push({ role: 'ai', text: reply });
+
+  // Detect Clarity Report
+  if (reply.includes('📌') && reply.includes('👣') && reply.includes('━━')) {
+    state.hasResult = true;
+    renderResults(reply);
+    const banner = document.createElement('div');
+    banner.className = 'result-banner';
+    banner.innerHTML = '<button class="result-btn">View your clarity map →</button>';
+    msgContainer.appendChild(banner);
+    banner.querySelector('button').onclick = () => goTo(screenResults);
+    scrollBottom();
+    return;
+  }
+
+  // Crisis response — stop
+  if (reply.includes('988') && !reply.includes('📌')) {
+    return;
+  }
+}
+
+// ============================================================
+//  COZE API
+// ============================================================
+async function callCozeAPI(message) {
+  const body = {
+    bot_id: CONFIG.botId,
+    user: state.userId,
+    query: message,
+    stream: false,
+  };
+  if (state.conversationId) body.conversation_id = state.conversationId;
+
+  const res = await fetch(CONFIG.apiUrl, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${CONFIG.apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  const data = await res.json();
+  if (data.conversation_id) state.conversationId = data.conversation_id;
+  const ans = (data.messages || []).find(m => m.type === 'answer');
+  return ans ? ans.content : '...';
+}
+
+// ============================================================
+//  MOCK AI (English)
+// ============================================================
+function mockAI(text) {
+  return new Promise(resolve => {
+    const delay = 600 + Math.random() * 800;
+
+    // Crisis detection
+    const crisisKeywords = ['want to die','kill myself','suicide','jump off','cut myself','overdose','want to disappear','end it all','don\'t want to live','end my life','goodbye forever','can\'t go on living','no reason to live','better off dead','hang myself','drive into'];
+    if (crisisKeywords.some(kw => text.toLowerCase().includes(kw))) {
+      setTimeout(() => {
+        resolve('I can\'t help you with this right now.\nPlease call the 24-hour crisis line: 988 (US)\nor visit findahelpline.com for support in your country.\nThere are real people there who can help you better than I can.');
+      }, 400);
+      return;
+    }
+
+    // Attack detection
+    const attackKeywords = ['shut up','useless','hate you','stupid','idiot','trash','garbage','worst','pathetic','suck','dumb','go away'];
+    if (attackKeywords.some(kw => text.toLowerCase().includes(kw))) {
+      state.attackCount++;
+      setTimeout(() => {
+        if (state.attackCount === 1) resolve('I hear you.');
+        else if (state.attackCount === 2) resolve('Go on.');
+        else resolve('You can be angry at me. I\'m not going anywhere.');
+      }, 300);
+      return;
+    }
+
+    // Beyond limit
+    if (state.beyondLimit) {
+      const wantReport = ['report','clarity','summary','wrap up','yeah','yes','ok','sure','fine','go ahead','do it','please'].some(kw => text.toLowerCase().includes(kw));
+      const wantContinue = ['continue','keep going','not yet','still','wait','more','talk more'].some(kw => text.toLowerCase().includes(kw));
+      if (wantContinue) {
+        setTimeout(() => {
+          resolve('Sure, let\'s keep going. But a couple more rounds and I\'ll need to pull it all together — otherwise it\'ll be too much to hold onto.');
+        }, delay);
+      } else {
+        setTimeout(() => {
+          resolve(generateReport());
+        }, delay);
+      }
+      return;
+    }
+
+    // Normal conversation
+    setTimeout(() => {
+      const n = state.roundCount;
+
+      if (n === 1) {
+        resolve('Let me try to unpack this — tell me if it sounds right:\n\nRight now, you\'ve got at least two or three things spinning in your head at the same time. You\'re not sure which one is the most urgent, or which one matters most. So it\'s not that you don\'t know what to do — it\'s that there\'s too much, and you don\'t know which one to grab first.\n\nDoes that sound right?');
+      } else if (n === 2) {
+        resolve('Got it. One light question:\n\nOf all these things — if tonight you could only think about one, which one would your mind drift to on its own?');
+      } else if (n === 3) {
+        resolve('That\'s the one.');
+      } else if (n === 4) {
+        resolve('OK, the direction is getting clearer. One more question before I put this together:\n\nDeep down, do you already have a vague sense of which way to go? Even if you\'re not sure.');
+      } else if (n >= 5 && n < 8) {
+        resolve('I\'m keeping track. Tell me more.');
+      } else if (n === 8) {
+        state.beyondLimit = true;
+        resolve('We\'ve been talking for a while now.\nI can put together everything we\'ve discussed into a Clarity Report, or we can keep going.\nWhat would you prefer?');
+      } else if (n >= 9) {
+        state.beyondLimit = true;
+        resolve(generateReport());
+      }
+    }, delay);
+  });
+}
+
+function generateReport() {
+  return '━━━━━━━━━━\n📌 Your core issue: You\'re facing several things at once, none of them easy, and the weight of all of them together is crushing you.\n\n📋 Where you\'re stuck:\n① Work isn\'t going well — no clear direction\n② Your body is breaking down — anxiety and insomnia draining you\n③ The future feels uncertain — you don\'t know which way to go\n\n🔗 How they connect:\nThey likely share one root — you\'re not okay with where you are right now, but you can\'t yet see a way out. That feeling of being "stuck" makes each individual problem feel heavier than it actually is.\n\n💡 What you actually need to address:\nIt\'s not "which one should I pick." It\'s that right now you don\'t have the energy left to choose at all. Stabilize your body first. Then you\'ll have the strength to think about everything else.\n\n👣 One thing you can do in the next 24 hours:\nBefore midnight tonight, put your phone in another room. Go to your bedroom. Don\'t do anything. Just lie down. You don\'t have to sleep. You don\'t have to close your eyes. Just lie there.\n\n⚠️ This is not therapy. If you\'re in ongoing pain, please call 988 (US) or visit findahelpline.com\n━━━━━━━━━━\n\nIf something here wasn\'t helpful, tell me. I\'ll improve it.\n\n— Tong Chengyu';
+}
+
+// ============================================================
+//  RESULTS PAGE
+// ============================================================
+function renderResults(text) {
+  const container = $id('resultsContent');
+  container.innerHTML = '';
+
+  const header = document.createElement('div');
+  header.className = 'results-header';
+  header.innerHTML = '<div class="glow">✨</div><h2>Your thoughts are now organized</h2><p>Screenshot this to save</p>';
+  container.appendChild(header);
+
+  // Core issue
+  const coreMatch = text.match(/📌[^:]*[:]\s*([\s\S]*?)(?=📋)/);
+  if (coreMatch) {
+    const card = document.createElement('div');
+    card.className = 'result-card';
+    card.innerHTML = '<div class="card-title">📌 Core issue</div><div class="card-content">' + coreMatch[1].trim() + '</div>';
+    container.appendChild(card);
+  }
+
+  // Where you're stuck
+  const itemsBlock = text.match(/📋[^:]*[:]([\s\S]*?)(?=🔗)/);
+  if (itemsBlock) {
+    const items = itemsBlock[1].match(/[①②③④⑤]\s*.+/g);
+    if (items) {
+      const card = document.createElement('div');
+      card.className = 'result-card';
+      card.innerHTML = '<div class="card-title">📋 Where you\'re stuck</div>';
+      const ol = document.createElement('ol');
+      items.forEach(i => {
+        const li = document.createElement('li');
+        li.textContent = i.replace(/^[①②③④⑤]\s*/, '').trim();
+        ol.appendChild(li);
+      });
+      card.appendChild(ol);
+      container.appendChild(card);
+    }
+  }
+
+  // How they connect
+  const linkMatch = text.match(/🔗[^:]*[:]([\s\S]*?)(?=💡)/);
+  if (linkMatch) {
+    const card = document.createElement('div');
+    card.className = 'result-card';
+    card.innerHTML = '<div class="card-title">🔗 How they connect</div><div class="relation-chain">' + linkMatch[1].trim() + '</div>';
+    container.appendChild(card);
+  }
+
+  // What you actually need
+  const rootMatch = text.match(/💡[^:]*[:]([\s\S]*?)(?=👣)/);
+  if (rootMatch) {
+    const card = document.createElement('div');
+    card.className = 'result-card';
+    card.innerHTML = '<div class="card-title">💡 What you actually need to address</div><div class="card-content">' + rootMatch[1].trim() + '</div>';
+    container.appendChild(card);
+  }
+
+  // One thing to do
+  const actionMatch = text.match(/👣[^:]*[:]([\s\S]*?)(?=⚠️|If something|━━)/);
+  if (actionMatch) {
+    const card = document.createElement('div');
+    card.className = 'result-card';
+    card.innerHTML = '<div class="card-title">👣 One thing you can do in the next 24 hours</div><div class="action-box"><span class="action-icon">→</span><span class="action-text">' + actionMatch[1].trim() + '</span></div>';
+    container.appendChild(card);
+  }
+
+  // Signature
+  const sigCard = document.createElement('div');
+  sigCard.className = 'result-card';
+  sigCard.innerHTML = '<div class="card-content" style="font-size:13px;color:var(--text-muted);text-align:right;padding-top:10px;border-top:1px dashed var(--border)">— Tong Chengyu</div>';
+  container.appendChild(sigCard);
+
+  // Crisis note
+  const crisis = document.createElement('p');
+  crisis.className = 'crisis-note';
+  crisis.textContent = '⚠️ This is not therapy. If you\'re in ongoing pain, please call 988 (US) or visit findahelpline.com';
+  container.appendChild(crisis);
+
+  // Deep consultation
+  const consult = document.createElement('p');
+  consult.className = 'consultation';
+  consult.innerHTML = 'If this wasn\'t enough, you can reach me directly.<br>Not a bot. Me, personally.<br>Email: tongchengyu@gmail.com<br>Even if you just need someone to talk to.';
+  container.appendChild(consult);
+
+  // Restart
+  const restart = document.createElement('div');
+  restart.className = 'restart-area';
+  const restartBtn = document.createElement('button');
+  restartBtn.className = 'restart-btn';
+  restartBtn.textContent = 'Start over';
+  restartBtn.onclick = () => goTo(screenHome);
+  restart.appendChild(restartBtn);
+  container.appendChild(restart);
+}
+
+// ============================================================
+//  EVENTS
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.scenario-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      startChat(scenarioMap[btn.dataset.sid] || '');
+    });
+  });
+
+  $id('freeStart').addEventListener('click', e => {
+    e.preventDefault();
+    startChat('');
+  });
+
+  $id('backBtn').addEventListener('click', () => goTo(screenHome));
+
+  sendBtn.addEventListener('click', () => {
+    if (inputField.value.trim()) sendUserMessage(inputField.value);
+  });
+
+  inputField.addEventListener('input', function () {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    sendBtn.classList.toggle('active', this.value.trim().length > 0);
+  });
+
+  inputField.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (this.value.trim()) sendUserMessage(this.value);
+    }
+  });
+
+  if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+    inputField.addEventListener('focus', () => setTimeout(scrollBottom, 300));
+  }
+});
+</script>
+</body>
+</html>
