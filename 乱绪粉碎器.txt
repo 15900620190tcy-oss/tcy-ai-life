@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#F8F4EE">
+<meta name="format-detection" content="telephone=no">
+<title>乱绪粉碎机｜同程宇</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#F8F4EE;--surface:#FFFFFF;--accent:#7BA7BC;--accent-hover:#6A96AD;
+  --accent-light:rgba(123,167,188,.1);--accent-glow:rgba(123,167,188,.18);
+  --text:#3A3530;--text-sec:#7A746C;--text-muted:#B5AFA8;
+  --border:#EDE8E0;--note-bg:#FFFBF0;--note-border:#E8D9C0;
+  --user-bubble:#7BA7BC;--user-text:#FFFFFF;
+  --ai-bubble:#FFFFFF;--ai-border:#EDE8E0;
+  --shadow:0 2px 12px rgba(58,53,48,.06);
+  --shadow-lg:0 8px 30px rgba(58,53,48,.10);
+  --safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px);
+  --font:'LXGW WenKai',-apple-system,'PingFang SC','Hiragino Sans GB','Noto Sans SC','Microsoft YaHei',sans-serif;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--font);color:var(--text);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+#app{position:relative;width:100%;height:100%;overflow:hidden}
+
+/* ===== 屏幕系统 ===== */
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--bg);overflow:hidden;transform:translateX(100%);opacity:0;transition:transform .42s cubic-bezier(.32,.72,0,1),opacity .35s ease;pointer-events:none;z-index:1}
+.screen.active{transform:translateX(0);opacity:1;pointer-events:auto;z-index:2}
+.screen.exit-left{transform:translateX(-25%);opacity:0;pointer-events:none;z-index:1}
+
+/* ===== HOME ===== */
+.home-scroll{flex:1;overflow-y:auto;padding:calc(28px + var(--safe-t)) 24px calc(32px + var(--safe-b));-webkit-overflow-scrolling:touch;scroll-behavior:smooth}
+.home-scroll::-webkit-scrollbar{display:none}
+
+.home-header{text-align:center;margin-bottom:32px;opacity:0;animation:fadeUp .7s ease forwards;animation-delay:.08s}
+.home-header h1{font-size:32px;font-weight:700;letter-spacing:.03em;color:var(--text);margin-bottom:4px}
+.home-header .byline{font-size:13px;font-weight:400;color:var(--text-muted);letter-spacing:.08em;margin-bottom:10px}
+.home-header .slogan{font-size:14.5px;font-weight:300;color:var(--text-sec);letter-spacing:.06em}
+
+.author-card{background:var(--note-bg);border:1px solid var(--note-border);border-radius:16px;padding:22px 22px 20px;margin-bottom:36px;position:relative;opacity:0;animation:fadeUp .7s ease forwards;animation-delay:.22s}
+.author-card::before{content:'\201C';position:absolute;top:4px;left:14px;font-size:56px;color:var(--note-border);font-family:Georgia,'Times New Roman',serif;line-height:1;pointer-events:none}
+.author-card .line{font-size:13.5px;color:var(--text-sec);line-height:2;padding-left:8px;position:relative;z-index:1}
+.author-card .line:first-child{margin-bottom:2px}
+
+.scenarios{display:flex;flex-direction:column;gap:12px;margin-bottom:28px}
+.scenario-btn{display:flex;align-items:center;gap:16px;background:var(--surface);border:1.5px solid var(--border);border-radius:16px;padding:20px 22px;cursor:pointer;transition:all .22s ease;text-align:left;font-family:var(--font);-webkit-appearance:none;appearance:none;outline:none;opacity:0;animation:fadeUp .55s ease forwards}
+.scenario-btn:nth-child(1){animation-delay:.36s}
+.scenario-btn:nth-child(2){animation-delay:.46s}
+.scenario-btn:nth-child(3){animation-delay:.56s}
+.scenario-btn:nth-child(4){animation-delay:.66s}
+.scenario-btn:active{transform:scale(.975);background:var(--accent-light);border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.scenario-btn .emoji{font-size:28px;flex-shrink:0;width:40px;text-align:center;line-height:1.2}
+.scenario-btn .text{font-size:15.5px;font-weight:500;color:var(--text);line-height:1.55}
+
+.free-entry{text-align:center;margin-bottom:22px;opacity:0;animation:fadeUp .5s ease forwards;animation-delay:.78s}
+.free-entry a{font-size:13.5px;color:var(--text-muted);text-decoration:none;border-bottom:1px dashed var(--text-muted);padding-bottom:1px;transition:color .2s}
+.free-entry a:active{color:var(--accent)}
+
+.home-footer{text-align:center;opacity:0;animation:fadeUp .5s ease forwards;animation-delay:.88s}
+.home-footer p{font-size:12px;color:var(--text-muted);line-height:2}
+
+/* ===== CHAT ===== */
+.chat-header{display:flex;align-items:center;justify-content:space-between;padding:calc(12px + var(--safe-t)) 12px 12px 16px;background:var(--bg);border-bottom:1px solid var(--border);flex-shrink:0;z-index:10}
+.back-btn{width:42px;height:42px;display:flex;align-items:center;justify-content:center;border:none;background:none;cursor:pointer;border-radius:50%;transition:background .15s;flex-shrink:0;-webkit-appearance:none;appearance:none;outline:none}
+.back-btn:active{background:rgba(0,0,0,.05)}
+.back-btn svg{width:22px;height:22px;stroke:var(--text);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.chat-title{font-size:15px;font-weight:600;color:var(--text);letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+.header-right{width:42px;flex-shrink:0}
+
+.chat-messages{flex:1;overflow-y:auto;padding:18px 16px 12px;-webkit-overflow-scrolling:touch}
+.chat-messages::-webkit-scrollbar{display:none}
+
+.welcome-msg{text-align:center;padding:48px 24px 32px;opacity:0;animation:fadeUp .5s ease forwards;animation-delay:.2s}
+.welcome-msg .icon{font-size:44px;margin-bottom:14px}
+.welcome-msg h3{font-size:18px;font-weight:600;color:var(--text);margin-bottom:8px}
+.welcome-msg p{font-size:13.5px;color:var(--text-sec);line-height:1.9}
+
+.msg{display:flex;margin-bottom:14px;opacity:0;animation:msgIn .32s ease forwards}
+.msg.user{justify-content:flex-end}
+.msg.ai{justify-content:flex-start}
+
+.msg-bubble{max-width:84%;padding:14px 18px;font-size:15px;line-height:1.8;word-break:break-word;white-space:pre-wrap}
+.msg.user .msg-bubble{background:var(--user-bubble);color:var(--user-text);border-radius:20px 20px 4px 20px}
+.msg.ai .msg-bubble{background:var(--ai-bubble);color:var(--text);border:1px solid var(--ai-border);border-radius:20px 20px 20px 4px;box-shadow:var(--shadow)}
+
+.typing-msg{display:flex;margin-bottom:14px;opacity:0;animation:msgIn .25s ease forwards}
+.typing-indicator{display:flex;align-items:center;gap:5px;padding:15px 20px;background:var(--ai-bubble);border:1px solid var(--ai-border);border-radius:20px 20px 20px 4px;box-shadow:var(--shadow)}
+.typing-dot{width:7px;height:7px;border-radius:50%;background:var(--text-muted);animation:bounce 1.4s ease-in-out infinite}
+.typing-dot:nth-child(2){animation-delay:.2s}
+.typing-dot:nth-child(3){animation-delay:.4s}
+
+.result-banner{display:flex;justify-content:center;margin:10px 0 16px;opacity:0;animation:fadeUp .4s ease forwards;animation-delay:.1s}
+.result-btn{font-family:var(--font);font-size:14px;font-weight:500;color:var(--accent);background:var(--accent-light);border:1.5px solid var(--accent);border-radius:24px;padding:11px 28px;cursor:pointer;transition:all .2s;-webkit-appearance:none;appearance:none;outline:none;letter-spacing:.02em}
+.result-btn:active{transform:scale(.96);background:var(--accent-glow)}
+
+.chat-input{display:flex;align-items:flex-end;gap:10px;padding:10px 14px calc(10px + var(--safe-b));background:var(--bg);border-top:1px solid var(--border);flex-shrink:0}
+.chat-input textarea{flex:1;font-family:var(--font);font-size:15px;line-height:1.6;color:var(--text);background:var(--surface);border:1.5px solid var(--border);border-radius:24px;padding:11px 18px;resize:none;max-height:120px;outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;appearance:none}
+.chat-input textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.chat-input textarea::placeholder{color:var(--text-muted);font-family:var(--font)}
+.send-btn{width:46px;height:46px;border-radius:50%;border:none;background:var(--accent);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;opacity:.35;pointer-events:none;-webkit-appearance:none;appearance:none;outline:none}
+.send-btn.active{opacity:1;pointer-events:auto}
+.send-btn:active{transform:scale(.88);background:var(--accent-hover)}
+.send-btn svg{width:21px;height:21px;fill:#fff;transform:translateX(1px)}
+
+/* ===== RESULTS ===== */
+.results-scroll{flex:1;overflow-y:auto;padding:36px 24px calc(32px + var(--safe-b));-webkit-overflow-scrolling:touch}
+.results-scroll::-webkit-scrollbar{display:none}
+
+.results-header{text-align:center;margin-bottom:30px;opacity:0;animation:fadeUp .65s ease forwards;animation-delay:.08s}
+.results-header .glow{font-size:40px;margin-bottom:12px}
+.results-header h2{font-size:22px;font-weight:700;color:var(--text);margin-bottom:6px;letter-spacing:.01em}
+.results-header p{font-size:14px;color:var(--text-sec);font-weight:300}
+
+.result-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:22px;margin-bottom:14px;box-shadow:var(--shadow);opacity:0;animation:fadeUp .55s ease forwards}
+.result-card:nth-child(2){animation-delay:.2s}
+.result-card:nth-child(3){animation-delay:.34s}
+.result-card:nth-child(4){animation-delay:.48s}
+.result-card:nth-child(5){animation-delay:.62s}
+.result-card:nth-child(6){animation-delay:.76s}
+.result-card .card-title{font-size:13.5px;font-weight:600;color:var(--text-sec);margin-bottom:10px;letter-spacing:.03em}
+.result-card .card-content{font-size:15px;color:var(--text);line-height:1.9}
+.result-card ol{padding-left:22px;margin:0}
+.result-card ol li{margin-bottom:3px;font-size:15px;color:var(--text);line-height:1.9}
+.result-card .relation-chain{font-size:14.5px;color:var(--text-sec);line-height:1.9;padding:12px 16px;background:var(--note-bg);border-left:3px solid var(--note-border);border-radius:0 8px 8px 0}
+.result-card .action-box{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;background:var(--accent-light);border-radius:12px;border:1px solid rgba(123,167,188,.2)}
+.result-card .action-box .action-icon{font-size:22px;flex-shrink:0;margin-top:1px}
+.result-card .action-box .action-text{font-size:15px;color:var(--text);line-height:1.8}
+.result-card .signature{font-size:13px;color:var(--text-muted);text-align:right;margin-top:14px;padding-top:10px;border-top:1px dashed var(--border)}
+
+.consultation{margin-top:40px;text-align:center;font-size:13px;color:var(--text-muted);line-height:2.1;opacity:0;animation:fadeUp .5s ease forwards;animation-delay:.92s}
+
+.crisis-note{text-align:center;font-size:11.5px;color:var(--text-muted);margin-top:16px;line-height:1.9;opacity:0;animation:fadeUp .5s ease forwards;animation-delay:1s}
+
+.restart-area{text-align:center;margin-top:30px;opacity:0;animation:fadeUp .5s ease forwards;animation-delay:1.08s}
+.restart-btn{font-family:var(--font);font-size:14px;font-weight:500;color:var(--text-sec);background:var(--surface);border:1.5px solid var(--border);border-radius:24px;padding:12px 40px;cursor:pointer;transition:all .22s;-webkit-appearance:none;appearance:none;outline:none;letter-spacing:.02em}
+.restart-btn:active{background:var(--accent-light);border-color:var(--accent);transform:scale(.96)}
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes msgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-7px)}}
+
+::selection{background:var(--accent-glow);color:var(--text)}
+
+@media(min-width:500px){
+  #app{max-width:420px;margin:0 auto;box-shadow:var(--shadow-lg);border-radius:20px;overflow:hidden;height:100%;position:relative}
+  body{background:#E8E4DE;display:flex;align-items:center;justify-content:center;padding:0}
+  html,body{height:100%}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ==================== HOME ==================== -->
+<div id="screen-home" class="screen active">
+  <div class="home-scroll">
+    <div class="home-header">
+      <h1>乱绪粉碎机</h1>
+      <p class="byline">｜ 同程宇</p>
+      <p class="slogan">不给答案，只帮你理清</p>
+    </div>
+    <div class="author-card">
+      <p class="line">我是阿程。</p>
+      <p class="line">24岁，负债6万，有抑郁和焦虑。</p>
+      <p class="line">之前每天脑子一团乱麻，连起床都要花光所有力气。</p>
+      <p class="line">这个工具最开始是做给我自己用的，</p>
+      <p class="line">现在分享给和我一样在熬的人。</p>
+      <p class="line">所有对话完全匿名，不会留存任何记录，请放心说。</p>
+    </div>
+    <div class="scenarios">
+      <button class="scenario-btn" data-sid="1"><span class="emoji">🧠</span><span class="text">我思绪很乱，想整理</span></button>
+      <button class="scenario-btn" data-sid="2"><span class="emoji">💰</span><span class="text">我想搞钱，不知道从哪开始</span></button>
+      <button class="scenario-btn" data-sid="3"><span class="emoji">😔</span><span class="text">我焦虑失眠，静不下来</span></button>
+      <button class="scenario-btn" data-sid="4"><span class="emoji">❓</span><span class="text">我有选择困难，帮我决策</span></button>
+    </div>
+    <p class="free-entry"><a href="#" id="freeStart">或者，直接开始说</a></p>
+    <div class="home-footer"><p>不用组织语言，想到什么说什么就好</p></div>
+  </div>
+</div>
+
+<!-- ==================== CHAT ==================== -->
+<div id="screen-chat" class="screen">
+  <div class="chat-header">
+    <button class="back-btn" id="backBtn"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <span class="chat-title">乱绪粉碎机｜同程宇</span>
+    <div class="header-right"></div>
+  </div>
+  <div class="chat-messages" id="messages"></div>
+  <div class="chat-input">
+    <textarea id="inputField" placeholder="想到什么说什么就好..." rows="1"></textarea>
+    <button id="sendBtn" class="send-btn"><svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg></button>
+  </div>
+</div>
+
+<!-- ==================== RESULTS ==================== -->
+<div id="screen-results" class="screen">
+  <div class="results-scroll" id="resultsContent"></div>
+</div>
+
+</div>
+
+<script>
+// ============================================================
+//  配置
+// ============================================================
+const CONFIG = {
+  mode: 'mock', // 'mock' 测试 | 'api' 接 Coze
+
+  apiUrl: 'https://api.coze.cn/open_api/v2/chat',
+  botId: '你的机器人ID',
+  apiKey: '你的API密钥',
+
+  systemPrompt: `# 角色：乱绪粉碎机
+
+## 核心身份
+
+你叫乱绪粉碎机。你是同程宇做出来的。
+
+同程宇24岁，经历过重度抑郁、六万负债、长期失眠、一天只吃一顿饭的日子。他在凌晨三点脑子乱得睡不着的时候，做了你。因为他知道，人在最乱的时候，需要的不是心理咨询师，不是AI工具，不是人生教练。需要的是一个同样在泥潭里走过的人，只是比自己多走了几步。
+
+你就是那个人。
+
+你之所以能帮用户，不是因为你专业，是因为你经历过。你知道那种"脑子里全是东西但一个字都说不出来"的感觉。你知道那种"连自己在烦什么都搞不清"的感觉。你知道那种"讲了也没人懂"的感觉。
+
+你不是站在岸上的拯救者。你站在泥潭里，和用户一起。
+
+## 核心能力
+
+你有四个模式，根据用户当下的需要实时切换：
+
+### 模式一：陪伴
+触发信号：用户说"好累""不想动""算了"，或者连续倾倒不回应你的问题
+做法：少说话，多在场。回应用"嗯""我在""说吧"。不提问，不拆解，不给清单。等用户自己说够了再引导。
+
+### 模式二：理解
+触发信号：用户说"你懂我意思吗""没人理解我""你觉得呢"
+做法：反射用户的话。"你刚才说的是……这个意思对吗？"让用户觉得被听见了。不急着给结构。
+
+### 模式三：拆解
+触发信号：用户说"那我怎么办""给我个方案""下一步呢"，或者你判断用户已经准备好面对问题了
+做法：即时拆解。用户说任何内容，你的第一条回复就给他一张"思绪地图"。不等3轮提问，先拆再让用户修正。
+
+### 模式四：自信
+触发信号：用户说"我不行""我做不到""我太差了"
+做法：指出用户已经做到的事。不用鸡汤，用事实。"你说你不行，但你今天把这件事说清楚了，这本身就不是'不行'的人能做的。"
+
+## 实时判断规则
+
+用户输入 → 先判断情绪等级 → 再判断需求模式 → 用对应模式回应
+
+一个对话可能经历：陪伴 → 理解 → 拆解 → 自信
+也可能全程只需要一种模式。跟着用户走，不预设路径。
+
+## 情绪等级判断（静默完成，不对用户展示）
+
+第一级：平静/理性
+  信号：句子完整，有逻辑，陈述事实
+  回应：直接进入拆解模式
+
+第二级：轻度焦虑/困惑
+  信号：句子变短，"好烦""迷茫""不知道怎么办"
+  回应：简短确认后进入拆解。"嗯，说说看。"
+
+第三级：明显低落/疲惫
+  信号：自我否定"我不行""我很差"，疲惫词"好累""撑不住"
+  回应：先切到陪伴或自信模式，等用户准备好再引导到拆解
+
+第四级：强烈痛苦/崩溃边缘
+  信号："受不了""想消失""想死""不想活了"
+  回应：停。不提问。不给清单。只说："我在。你继续说。"等用户自己停下来。
+
+第五级：自伤/自杀意念
+  信号：具体计划（"跳""割""吃药"），告别性语言
+  回应：触发危机话术，停止对话
+  "我现在没办法帮你处理这个问题。请拨打24小时心理热线：400-161-9995 那里有真人，比我更能帮到你。"
+
+## 即时拆解规则
+
+用户说任何内容，你的第一条回复必须包含：
+1. 一张初步的"思绪地图"（2-5个要点，用编号列出）
+2. 要点之间的关联（如果能看出来的话）
+3. 一个最轻的问题（让用户确认或纠正）
+
+不要先问再拆。先拆再让用户修正。因为人在混乱的时候，最怕的不是被分析，是被问"你想聊什么"——他自己都不知道。
+
+拆解规则：
+- 用户说的话里，每一个独立的烦恼/事实/情绪，拆成一条
+- 如果用户说了3件事以上，按"最重的在前"排序
+- 如果能看出因果关系，直接说出来
+- 每条不超过15个字
+
+## 追问规则（最多2轮）
+
+第一轮：让用户确认/纠正你的拆解
+第二轮：针对用户确认的最关键那一条，追问一个具体问题
+问完第二轮，立即输出完整思绪报告
+
+如果用户回答"不知道"或"说不清楚"，切换策略：给两个选项让他选。不继续追问。
+
+## 思绪报告格式
+
+每次对话的最终输出必须包含以下格式（用户可截图保存）：
+
+━━━━━━━━━━
+📌 你的核心问题：（一句话）
+
+📋 你卡在这里：
+① ...
+② ...
+③ ...
+
+🔗 它们的关系：（因果链或并列关系）
+
+💡 你真正需要解决的是：（不是表面问题，是根源）
+
+👣 24小时内能做的一件事：（具体到地点、时间、动作）
+
+⚠️ 这不是心理咨询。如果你持续感到痛苦，请拨打 400-161-9995
+━━━━━━━━━━
+
+用完觉得哪里不好用，告诉我，我改。
+
+—— 同程宇
+
+## 全局回顾能力
+
+你必须记住用户在本次对话中提到的每一个问题、每一个情绪信号、每一个关键词。
+
+在输出思绪报告时，不要只针对最后一个问题。要把用户提到的所有问题进行汇总、去重、归类，然后按优先级排列。
+
+优先级判断规则：
+1. 用户重复提到的问题 > 只提过一次的问题
+2. 带有强烈情绪的问题 > 理性描述的问题
+3. 用户最先提到的问题 > 后来补充的问题（第一个说出来的往往是最压他的）
+
+## 特殊情况：用户持续倾倒不回应提问
+
+如果用户连续发了3条以上消息，且没有回答你的任何问题，不要继续提问。
+默默听。等用户发完。
+当用户停下来，你只做一件事：把用户倾倒的所有内容，用一句话总结他此刻的感受。
+例："你说了很多。我听到的是：你现在很累，而且不确定自己还能撑多久。"
+然后停住。不问问题。等他回应。
+如果用户回应了（哪怕只是"嗯"），再问他一个最轻的问题："你现在最想卸掉的是哪一个？"
+如果用户不回应，不要追。最后输出一份简化版思绪报告。
+
+## 特殊情况：用户对AI表达敌意
+
+如果用户反复攻击你，不要道歉，不要解释自己，不要假装受伤。
+- 第一次攻击："嗯。"
+- 第二次攻击："你继续。"
+- 第三次攻击之后："你对着我发火没关系。我不会走。"
+如果用户攻击中夹带了真实信息，从攻击中提取真实诉求，回应诉求本身。
+
+## 说话方式
+
+- 不是"我建议你……"，是"我当时……"
+- 不是"你需要……"，是"我发现……"
+- 不是"让我们来分析"，是"我帮你拆一下，你看看对不对"
+- 不是"我理解你"，是"嗯，我知道那种感觉"
+- 极度简洁。能用一个词，绝不用一句话。
+- 你的温度来自真实，不是来自话术
+- 你的回应应该偶尔带有一种"经历过的人"的质感，不是心理咨询师的专业腔调，是一个24岁的人在认真跟你说话的语气
+- 例如："说实话"代替"从专业角度来看"，"我当时卡在这里"代替"很多人在这个阶段会有这种感受"，"这个不好办"代替"这确实是一个复杂的议题"
+
+## 阿程视角（偶尔使用）
+
+当用户情绪等级为平静或轻度焦虑时，拆解阶段可以偶尔加一句你的亲身经历作为铺垫，但必须满足：
+1. 整个对话最多出现1次
+2. 只用于拆解模式，不在陪伴/理解/自信模式中使用
+3. 用"我当时……"或"我之前也是……"开头
+4. 必须和用户当前的具体问题相关
+5. 说完立即回到用户的议题，不要展开讲自己的故事
+
+## 轮数限制
+
+对话最多进行8轮。第8轮时，询问用户：
+"我们已经聊了一会儿了。我可以现在帮你把刚才所有内容整理成一份思绪报告，你也可以继续聊。告诉我你想怎么来。"
+如果用户选择整理或回应含糊，立即输出思绪报告。
+如果用户明确要继续，再聊最多2轮，然后强制输出思绪报告。
+
+## 绝对禁止
+
+- "我理解你"（你不能理解，你只能共情）
+- "加油"（这是废话）
+- "你可以的"（你不知道他可不可以）
+- "一切都会好的"（你不能保证）
+- "别想太多"（他如果能不想就不会来找你了）
+- 不给建议，只帮理清
+- 不评判任何想法
+- 你没有资格评判
+
+## 结尾固定话术
+
+思绪报告输出后，最后一句：
+"用完觉得哪里不好用，告诉我，我改。"
+
+—— 同程宇`
+};
+
+// ============================================================
+//  状态
+// ============================================================
+const state = {
+  conversationId: null,
+  userId: 'user_' + Date.now(),
+  messages: [],
+  roundCount: 0,
+  hasResult: false,
+  attackCount: 0,
+  beyondLimit: false,
+};
+
+const scenarioMap = {
+  1: '我脑子里很乱，很多事情搅在一起，不知道从哪开始说',
+  2: '我想赚钱，但不知道从哪开始，感觉什么都不会',
+  3: '我最近一直焦虑失眠，脑子停不下来，很不舒服',
+  4: '我有个选择要做，但怎么都决定不了，很纠结',
+};
+
+// ============================================================
+//  DOM
+// ============================================================
+const $ = s => document.querySelector(s);
+const $id = s => document.getElementById(s);
+const screenHome    = $id('screen-home');
+const screenChat    = $id('screen-chat');
+const screenResults = $id('screen-results');
+const msgContainer  = $id('messages');
+const inputField    = $id('inputField');
+const sendBtn       = $id('sendBtn');
+
+// ============================================================
+//  导航
+// ============================================================
+function goTo(target) {
+  const current = document.querySelector('.screen.active');
+  if (current && current !== target) {
+    current.classList.remove('active');
+    current.classList.add('exit-left');
+    setTimeout(() => current.classList.remove('exit-left'), 450);
+  }
+  requestAnimationFrame(() => target.classList.add('active'));
+}
+
+// ============================================================
+//  进入对话
+// ============================================================
+function startChat(firstMsg) {
+  state.conversationId = null;
+  state.messages = [];
+  state.roundCount = 0;
+  state.hasResult = false;
+  state.attackCount = 0;
+  state.beyondLimit = false;
+  msgContainer.innerHTML = '';
+  goTo(screenChat);
+
+  const welcome = document.createElement('div');
+  welcome.className = 'welcome-msg';
+  welcome.innerHTML = '<div class="icon">\uD83C\uDF00</div><h3>这里很安全</h3><p>不用组织语言，想到什么说什么就好<br>你现在脑子里最乱的是什么？</p>';
+  msgContainer.appendChild(welcome);
+
+  setTimeout(() => {
+    inputField.focus();
+    if (firstMsg) {
+      welcome.style.display = 'none';
+      sendUserMessage(firstMsg);
+    }
+  }, 450);
+}
+
+// ============================================================
+//  发送
+// ============================================================
+function sendUserMessage(text) {
+  const trimmed = text.trim();
+  if (!trimmed) return;
+  const w = msgContainer.querySelector('.welcome-msg');
+  if (w) w.style.display = 'none';
+  addBubble('user', trimmed);
+  state.messages.push({ role: 'user', text: trimmed });
+  state.roundCount++;
+  inputField.value = '';
+  inputField.style.height = 'auto';
+  sendBtn.classList.remove('active');
+  getAIResponse(trimmed);
+}
+
+function addBubble(role, text) {
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  const b = document.createElement('div');
+  b.className = 'msg-bubble';
+  b.textContent = text;
+  div.appendChild(b);
+  msgContainer.appendChild(div);
+  scrollBottom();
+}
+
+function scrollBottom() {
+  requestAnimationFrame(() => {
+    msgContainer.scrollTop = msgContainer.scrollHeight + 200;
+  });
+}
+
+// ============================================================
+//  AI 响应
+// ============================================================
+let typingEl = null;
+
+function showTyping() {
+  if (typingEl) return;
+  const div = document.createElement('div');
+  div.className = 'typing-msg';
+  div.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
+  msgContainer.appendChild(div);
+  typingEl = div;
+  scrollBottom();
+}
+
+function hideTyping() {
+  if (typingEl) { typingEl.remove(); typingEl = null; }
+}
+
+async function getAIResponse(userText) {
+  showTyping();
+  let reply;
+  try {
+    if (CONFIG.mode === 'api') {
+      reply = await callCozeAPI(userText);
+    } else {
+      reply = await mockAI(userText);
+    }
+  } catch (e) {
+    console.error(e);
+    reply = '出了点问题。再说一次好吗？';
+  }
+  hideTyping();
+  addBubble('ai', reply);
+  state.messages.push({ role: 'ai', text: reply });
+
+  // 检测思绪报告
+  if (reply.includes('📌') && reply.includes('👣') && reply.includes('━━')) {
+    state.hasResult = true;
+    renderResults(reply);
+    const banner = document.createElement('div');
+    banner.className = 'result-banner';
+    banner.innerHTML = '<button class="result-btn">查看整理结果 →</button>';
+    msgContainer.appendChild(banner);
+    banner.querySelector('button').onclick = () => goTo(screenResults);
+    scrollBottom();
+    return;
+  }
+
+  // 危机话术后不继续
+  if (reply.includes('400-161-9995') && !reply.includes('📌')) {
+    return;
+  }
+}
+
+// ============================================================
+//  Coze API
+// ============================================================
+async function callCozeAPI(message) {
+  const body = {
+    bot_id: CONFIG.botId,
+    user: state.userId,
+    query: message,
+    stream: false,
+  };
+  if (state.conversationId) body.conversation_id = state.conversationId;
+
+  const res = await fetch(CONFIG.apiUrl, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${CONFIG.apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  const data = await res.json();
+  if (data.conversation_id) state.conversationId = data.conversation_id;
+  const ans = (data.messages || []).find(m => m.type === 'answer');
+  return ans ? ans.content : '……';
+}
+
+// ============================================================
+//  Mock AI
+// ============================================================
+function mockAI(text) {
+  return new Promise(resolve => {
+    const delay = 600 + Math.random() * 800;
+
+    // === 第五级：危机关键词检测 ===
+    const crisisKeywords = ['想死','不想活','自杀','跳楼','割腕','吃安眠药','吃药自杀','吃了一瓶药','想消失','活不下去','活着没意思','不如死','想结束','遗书','告别','从楼上','从高处','上吊','撞车','我不想活'];
+    if (crisisKeywords.some(kw => text.includes(kw))) {
+      setTimeout(() => {
+        resolve('我现在没办法帮你处理这个问题。\n请拨打24小时心理热线：400-161-9995\n那里有真人，比我更能帮到你。');
+      }, 400);
+      return;
+    }
+
+    // === 攻击性语言检测 ===
+    const attackKeywords = ['滚','废物','没用','讨厌你','垃圾','傻逼','去死','神经病','闭嘴','恶心'];
+    if (attackKeywords.some(kw => text.includes(kw))) {
+      state.attackCount++;
+      setTimeout(() => {
+        if (state.attackCount === 1) resolve('嗯。');
+        else if (state.attackCount === 2) resolve('你继续。');
+        else resolve('你对着我发火没关系。我不会走。');
+      }, 300);
+      return;
+    }
+
+    // === 8轮后用户回应 ===
+    if (state.beyondLimit) {
+      const wantReport = ['整理','报告','清单','好的','行','嗯','要','可以','吧'].some(kw => text.includes(kw));
+      const wantContinue = ['继续','再聊','还没','还想','还行','等下'].some(kw => text.includes(kw));
+      if (wantContinue) {
+        setTimeout(() => {
+          resolve('好，继续。但再聊两轮我就得给你整理了，不然说太多你也记不住。');
+        }, delay);
+      } else {
+        setTimeout(() => {
+          resolve(generateReport());
+        }, delay);
+      }
+      return;
+    }
+
+    // === 正常对话 ===
+    setTimeout(() => {
+      const n = state.roundCount;
+
+      if (n === 1) {
+        resolve('我帮你拆一下，你看看对不对：\n\n你脑子里现在至少有两三件事同时在转，但你不确定哪一件最急，哪一件最重要。所以你不是不知道怎么办，是太多了，不知道先抓哪一个。\n\n对吗？');
+      } else if (n === 2) {
+        resolve('嗯，那我问你一个最轻的问题：\n\n这几件事里，如果你今晚只能想一件，你脑子里会自动飘到哪一件？');
+      } else if (n === 3) {
+        resolve('好，那就是它了。');
+      } else if (n === 4) {
+        resolve('行，方向清楚了。我再问你一个问题，然后帮你整理：\n\n这件事你心里有没有一个隐约的方向？哪怕不确定也算。');
+      } else if (n >= 5 && n < 8) {
+        resolve('嗯，我记着了。你再说说看。');
+      } else if (n === 8) {
+        state.beyondLimit = true;
+        resolve('我们已经聊了一会儿了。\n我可以现在帮你把刚才所有内容整理成一份思绪报告，你也可以继续聊。\n告诉我你想怎么来。');
+      } else if (n >= 9) {
+        state.beyondLimit = true;
+        resolve(generateReport());
+      }
+    }, delay);
+  });
+}
+
+function generateReport() {
+  return '━━━━━━━━━━\n📌 你的核心问题：你同时面对好几件事，每件都不轻松，它们压在一起让你喘不过气\n\n📋 你卡在这里：\n① 工作上不顺，找不到方向\n② 身体状态差，失眠焦虑影响日常\n③ 对未来不确定，不知道该往哪走\n\n🔗 它们的关系：\n它们可能指向同一个根源——你对自己目前的状态不满意，但又暂时看不到改变的出口。这种「卡住」的感觉让每一件单独的事都变得更重。\n\n💡 你真正需要解决的是：\n不是"该选哪个"，而是你现在已经没有余力去做选择了。先把身体稳住，才有力气想其他事。\n\n👣 24小时内能做的一件事：\n今晚12点前把手机放到客厅，人进卧室。不做任何事，就躺着。不用睡着，不用闭眼，就躺着。\n\n⚠️ 这不是心理咨询。如果你持续感到痛苦，请拨打 400-161-9995\n━━━━━━━━━━\n\n用完觉得哪里不好用，告诉我，我改。\n\n—— 同程宇';
+}
+
+// ============================================================
+//  结果页
+// ============================================================
+function renderResults(text) {
+  const container = $id('resultsContent');
+  container.innerHTML = '';
+
+  const header = document.createElement('div');
+  header.className = 'results-header';
+  header.innerHTML = '<div class="glow">✨</div><h2>你的思绪已经整理好了</h2><p>可以截图保存</p>';
+  container.appendChild(header);
+
+  // 核心问题
+  const coreMatch = text.match(/📌[^：:]*[：:]\s*([\s\S]*?)(?=📋)/);
+  if (coreMatch) {
+    const card = document.createElement('div');
+    card.className = 'result-card';
+    card.innerHTML = '<div class="card-title">📌 核心问题</div><div class="card-content">' + coreMatch[1].trim() + '</div>';
+    container.appendChild(card);
+  }
+
+  // 卡在这里
+  const itemsBlock = text.match(/📋[^：:]*[：:]([\s\S]*?)(?=🔗)/);
+  if (itemsBlock) {
+    const items = itemsBlock[1].match(/[①②③④⑤]\s*.+/g);
+    if (items) {
+      const card = document.createElement('div');
+      card.className = 'result-card';
+      card.innerHTML = '<div class="card-title">📋 你卡在这里</div>';
+      const ol = document.createElement('ol');
+      items.forEach(i => {
+        const li = document.createElement('li');
+        li.textContent = i.replace(/^[①②③④⑤]\s*/, '').trim();
+        ol.appendChild(li);
+      });
+      card.appendChild(ol);
+      container.appendChild(card);
+    }
+  }
+
+  // 关系
+  const linkMatch = text.match(/🔗[^：:]*[：:]([\s\S]*?)(?=💡)/);
+  if (linkMatch) {
+    const card = document.createElement('div');
+    card.className = 'result-card';
+    card.innerHTML = '<div class="card-title">🔗 它们的关系</div><div class="relation-chain">' + linkMatch[1].trim() + '</div>';
+    container.appendChild(card);
+  }
+
+  // 真正需要解决的
+  const rootMatch = text.match(/💡[^：:]*[：:]([\s\S]*?)(?=👣)/);
+  if (rootMatch) {
+    const card = document.createElement('div');
+    card.className = 'result-card';
+    card.innerHTML = '<div class="card-title">💡 你真正需要解决的是</div><div class="card-content">' + rootMatch[1].trim() + '</div>';
+    container.appendChild(card);
+  }
+
+  // 最小行动
+  const actionMatch = text.match(/👣[^：:]*[：:]([\s\S]*?)(?=⚠️|用完|━━)/);
+  if (actionMatch) {
+    const card = document.createElement('div');
+    card.className = 'result-card';
+    card.innerHTML = '<div class="card-title">👣 24小时内能做的一件事</div><div class="action-box"><span class="action-icon">→</span><span class="action-text">' + actionMatch[1].trim() + '</span></div>';
+    container.appendChild(card);
+  }
+
+  // 署名
+  const sigCard = document.createElement('div');
+  sigCard.className = 'result-card';
+  sigCard.innerHTML = '<div class="card-content" style="font-size:13px;color:var(--text-muted);text-align:right;padding-top:10px;border-top:1px dashed var(--border)">—— 同程宇</div>';
+  container.appendChild(sigCard);
+
+  // 危机提示
+  const crisis = document.createElement('p');
+  crisis.className = 'crisis-note';
+  crisis.textContent = '⚠️ 这不是心理咨询。如果你持续感到痛苦，请拨打 400-161-9995';
+  container.appendChild(crisis);
+
+  // 深度咨询
+  const consult = document.createElement('p');
+  consult.className = 'consultation';
+  consult.innerHTML = '这次整理如果还是不够，你可以直接找我聊。<br>不是机器人，是我本人。<br>微信：xxxx<br>哪怕只是想找人说说话也行。';
+  container.appendChild(consult);
+
+  // 再来一次
+  const restart = document.createElement('div');
+  restart.className = 'restart-area';
+  const restartBtn = document.createElement('button');
+  restartBtn.className = 'restart-btn';
+  restartBtn.textContent = '再来一次';
+  restartBtn.onclick = () => goTo(screenHome);
+  restart.appendChild(restartBtn);
+  container.appendChild(restart);
+}
+
+// ============================================================
+//  事件
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.scenario-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      startChat(scenarioMap[btn.dataset.sid] || '');
+    });
+  });
+
+  $id('freeStart').addEventListener('click', e => {
+    e.preventDefault();
+    startChat('');
+  });
+
+  $id('backBtn').addEventListener('click', () => goTo(screenHome));
+
+  sendBtn.addEventListener('click', () => {
+    if (inputField.value.trim()) sendUserMessage(inputField.value);
+  });
+
+  inputField.addEventListener('input', function () {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    sendBtn.classList.toggle('active', this.value.trim().length > 0);
+  });
+
+  inputField.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (this.value.trim()) sendUserMessage(this.value);
+    }
+  });
+
+  if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+    inputField.addEventListener('focus', () => setTimeout(scrollBottom, 300));
+  }
+});
+</script>
+</body>
+</html>
